@@ -44,12 +44,14 @@
 import { reactive, ref } from 'vue'
 import { login } from '~/api/manager'
 import { useRouter } from 'vue-router'
-import { useCookies } from '@vueuse/integrations/useCookies.mjs';
-import { ElNotification } from 'element-plus'
+import { getToken, setToken } from '~/composables/auth'
+import { toast } from '~/composables/utils'
+import { useStore } from 'vuex'
+import { getInfo } from '~/api/manager'
 
 const router = useRouter()
-const cookies = useCookies()
 const loading = ref(false)
+const store = useStore()
 
 // do not use same name with ref
 const form = reactive({
@@ -80,13 +82,13 @@ const onSubmit = () => {
         login(form.username, form.password)
             .then(res => {
                 console.log(res)
-                ElNotification({
-                    message: "登录成功",
-                    type: 'success',
-                    duration: 2000
+                toast("登录成功")
+                // 设置Token
+                setToken(res.data.token)
+                getInfo().then(res => {
+                    store.commit('setUserInfo', res.data)
+                    router.push('/')
                 })
-                cookies.set('admin-token', res.data.token)
-                router.push('/')
             })
             .finally(() => {
                 loading.value = false
