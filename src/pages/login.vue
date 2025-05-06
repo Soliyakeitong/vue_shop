@@ -33,7 +33,7 @@
                     </el-input>
                 </el-form-item>
                 <el-form-item>
-                    <el-button round color="#626aef" class="w-[250px]" type="primary" @click="onSubmit">登 录</el-button>
+                    <el-button round color="#626aef" class="w-[250px]" type="primary" @click="onSubmit" :loading="loading">登 录</el-button>
                 </el-form-item>
             </el-form>
         </el-col>
@@ -42,6 +42,14 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
+import { login } from '~/api/manager'
+import { useRouter } from 'vue-router'
+import { useCookies } from '@vueuse/integrations/useCookies.mjs';
+import { ElNotification } from 'element-plus'
+
+const router = useRouter()
+const cookies = useCookies()
+const loading = ref(false)
 
 // do not use same name with ref
 const form = reactive({
@@ -61,12 +69,28 @@ const rules = {
 
 
 const onSubmit = () => {
-    Formref.value.validate((v) =>{
-        if(!v){
+    Formref.value.validate((v) => {
+        if (!v) {
             return false
-        }else{
+        } else {
             console.log("ok")
         }
+        loading.value = true
+        // promise对象 通过.then获取响应数据，通过.catch获取错误信息
+        login(form.username, form.password)
+            .then(res => {
+                console.log(res)
+                ElNotification({
+                    message: "登录成功",
+                    type: 'success',
+                    duration: 2000
+                })
+                cookies.set('admin-token', res.data.token)
+                router.push('/')
+            })
+            .finally(() => {
+                loading.value = false
+            })
     })
     console.log('submit!')
 }
